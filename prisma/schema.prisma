@@ -1,0 +1,269 @@
+// TradePay — multi-vertical white-label payments SaaS
+// Money is always stored in integer cents. Rates in basis points (1 bps = 0.01%).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Vertical {
+  TOWING
+  AUTO_REPAIR
+  BODY_SHOP
+  HVAC
+  PLUMBING
+  ELECTRICAL
+  HOME_SERVICES
+  OTHER
+}
+
+enum MerchantStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ACTIVE
+  REJECTED
+  DISABLED
+}
+
+enum PricingMode {
+  // Merchant absorbs fees (classic)
+  STANDARD
+  // Line-item surcharge on credit only (capped by state + network + cost)
+  SURCHARGE
+  // Posted card price; cash/ACH gets discount. Legal in all 50 states.
+  CASH_DISCOUNT
+}
+
+enum MembershipTier {
+  NONE
+  STANDARD
+  ELITE
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  DISPUTED
+}
+
+enum PaymentChannel {
+  PAY_LINK
+  VIRTUAL_TERMINAL
+  CARD_PRESENT
+  TAP_TO_PAY
+  PHONE_IVR
+  API
+}
+
+enum FundingType {
+  CREDIT
+  DEBIT
+  PREPAID
+  ACH
+  UNKNOWN
+}
+
+enum PayLinkStatus {
+  OPEN
+  PAID
+  EXPIRED
+  CANCELED
+}
+
+enum DisputeStatus {
+  NEEDS_RESPONSE
+  UNDER_REVIEW
+  WON
+  LOST
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Merchant {
+  id                String          @id @default(cuid())
+  legalName         String
+  dbaName           String
+  vertical          Vertical
+  status            MerchantStatus  @default(DRAFT)
+  // Two-letter US state of primary business location (drives surcharge rules)
+  state             String          @db.Char(2)
+  email             String
+  phone             String?
+  pricingMode       PricingMode     @default(CASH_DISCOUNT)
+  // Cash-discount program: posted card price markup (bps). e.g. 350 = 3.5%
+  cashDiscountBps   Int             @default(350)
+  // Surcharge program: requested surcharge (bps); engine caps it
+  surchargeBps      Int             @default(300)
+  // Merchant's blended credit acceptance cost (bps) — legal ceiling for surcharge
+  creditCostBps     Int             @default(300)
+  membershipTier    MembershipTier  @default(NONE)
+  surchargeNoticeAt DateTime?       // date 30-day card-network notice was sent
+  provider          String          // mock | tilled | finix
+  providerAccountId String?         @unique
+  // Vertical-specific settings (impound rates, labor rates, etc.)
+  settings          Json            @default("{}")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  apiKeys     ApiKey[]
+  payLinks    PayLink[]
+  payments    Payment[]
+  payouts     Payout[]
+  duesLedger  DuesLedgerEntry[]
+  webhooks    WebhookEndpoint[]
+  jobs        Job[]
+}
+
+// API keys for integrations (your dispatch SaaS, partner software, etc.)
+model ApiKey {
+  id         String    @id @default(cuid())
+  merchantId String
+  merchant   Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String    @unique // shown in UI, e.g. tp_live_ab12
+  hash       String    // sha256 of full key; full key never stored
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+// Generic job record: tow, repair order, service call. Vertical fields in `details`.
+model Job {
+  id          String    @id @default(cuid())
+  merchantId  String
+  merchant    Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  externalRef String?   // ID in the integrating system (dispatch, shop mgmt, FSM)
+  source      String?   // e.g. "dispatch", "tekmetric", "manual"
+  title       String
+  details     Json      @default("{}")
+  createdAt   DateTime  @default(now())
+
+  payLinks PayLink[]
+  payments Payment[]
+
+  @@unique([merchantId, source, externalRef])
+}
+
+model PayLink {
+  id              String        @id @default(cuid())
+  merchantId      String
+  merchant        Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  jobId           String?
+  job             Job?          @relation(fields: [jobId], references: [id])
+  token           String        @unique // public URL token
+  description     String
+  baseAmountCents Int           // the "cash price"
+  customerName    String?
+  customerPhone   String?
+  customerEmail   String?
+  status          PayLinkStatus @default(OPEN)
+  expiresAt       DateTime
+  createdAt       DateTime      @default(now())
+  payments        Payment[]
+}
+
+model Payment {
+  id                  String         @id @default(cuid())
+  merchantId          String
+  merchant            Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  jobId               String?
+  job                 Job?           @relation(fields: [jobId], references: [id])
+  payLinkId           String?
+  payLink             PayLink?       @relation(fields: [payLinkId], references: [id])
+  channel             PaymentChannel
+  funding             FundingType    @default(UNKNOWN)
+  status              PaymentStatus  @default(PENDING)
+  baseAmountCents     Int            // pre-fee price
+  feeAmountCents      Int            // surcharge or cash-discount differential collected from payer
+  totalAmountCents    Int            // charged to payer
+  feeLabel            String?        // receipt line item label
+  providerCostCents   Int            @default(0) // estimated interchange+network+provider cost
+  platformRevenueCents Int           @default(0) // our margin on this payment
+  refundedCents       Int            @default(0)
+  providerPaymentId   String?        @unique
+  idempotencyKey      String?        @unique
+  last4               String?
+  brand               String?
+  failureReason       String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  disputes            Dispute[]
+}
+
+model Dispute {
+  id                String        @id @default(cuid())
+  paymentId         String
+  payment           Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  providerDisputeId String        @unique
+  amountCents       Int
+  reason            String
+  status            DisputeStatus @default(NEEDS_RESPONSE)
+  respondBy         DateTime?
+  // Evidence locker: photos, signature, GPS, timestamps, call recording refs (no card data)
+  evidence          Json          @default("{}")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model Payout {
+  id               String       @id @default(cuid())
+  merchantId       String
+  merchant         Merchant     @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  amountCents      Int
+  instant          Boolean      @default(false)
+  feeCents         Int          @default(0)
+  status           PayoutStatus @default(PENDING)
+  providerPayoutId String?      @unique
+  createdAt        DateTime     @default(now())
+}
+
+// Elite "membership paid by processing" ledger, one row per merchant per month
+model DuesLedgerEntry {
+  id              String   @id @default(cuid())
+  merchantId      String
+  merchant        Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  period          String   // YYYY-MM
+  duesCents       Int
+  creditCents     Int      // processing revenue applied to dues (capped at dues)
+  balanceDueCents Int      // what member owes after credit
+  excessCents     Int      // platform revenue above dues
+  finalizedAt     DateTime?
+  createdAt       DateTime @default(now())
+
+  @@unique([merchantId, period])
+}
+
+// Inbound provider webhook events — idempotency + audit
+model ProviderEvent {
+  id         String   @id // provider event id
+  provider   String
+  type       String
+  payload    Json
+  receivedAt DateTime @default(now())
+  processedAt DateTime?
+}
+
+// Outbound webhooks to integrating systems (dispatch, FSM, shop mgmt)
+model WebhookEndpoint {
+  id         String   @id @default(cuid())
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  url        String
+  secret     String
+  events     String[] // e.g. ["payment.succeeded","dispute.created"]
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
