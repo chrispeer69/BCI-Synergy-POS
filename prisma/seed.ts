@@ -7,6 +7,7 @@ import { generateApiKey, randomToken } from "../src/lib/crypto";
 import { priceCharge } from "../src/lib/pricing";
 import { platformRevenue, estimateProviderCost } from "../src/lib/economics";
 import { computeDuesCredit, periodOf } from "../src/lib/dues";
+import { hashPassword } from "../src/lib/password";
 
 const db = new PrismaClient();
 
@@ -57,7 +58,25 @@ async function main() {
     data: { merchantId: m.id, token: randomToken(18), description: "Tow · I-95 MM 42 → Shop", baseAmountCents: 24_500, customerName: "J. Rivera", expiresAt: new Date(Date.now() + 72 * 3_600_000) },
   });
 
-  console.log(`Merchant: ${m.id}\nAPI key (shown once): ${key.key}`);
+  // House account: collects Elite dues balances (set PLATFORM_MERCHANT_ID to this id)
+  const house = await db.merchant.create({
+    data: {
+      legalName: "BCI Synergy LLC", dbaName: "BCI Synergy", vertical: "OTHER", state: "FL", email: "billing@example.com",
+      pricingMode: "STANDARD", provider: "mock", providerAccountId: `acct_mock_${randomToken(8)}`, status: "ACTIVE",
+    },
+  });
+
+  // Console users — passwords printed once
+  const adminPw = process.env.SEED_ADMIN_PASSWORD ?? randomToken(12);
+  const ownerPw = randomToken(12);
+  await db.user.create({ data: { email: (process.env.SEED_ADMIN_EMAIL ?? "admin@example.com").toLowerCase(), name: "Platform Admin", role: "PLATFORM_ADMIN", passwordHash: await hashPassword(adminPw) } });
+  await db.user.create({ data: { email: "owner@merchantone.example", name: "Merchant One Owner", role: "OWNER", merchantId: m.id, passwordHash: await hashPassword(ownerPw) } });
+
+  console.log(`Merchant #1:          ${m.id}
+API key (shown once): ${key.key}
+PLATFORM_MERCHANT_ID: ${house.id}
+Admin login:          ${(process.env.SEED_ADMIN_EMAIL ?? "admin@example.com").toLowerCase()} / ${adminPw}
+Owner login:          owner@merchantone.example / ${ownerPw}`);
 }
 
 main().finally(() => db.$disconnect());

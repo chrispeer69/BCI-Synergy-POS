@@ -22,9 +22,16 @@ export async function requireMerchantKey(req: Request) {
   return apiKey.merchant;
 }
 
-/** Platform admin auth for /api/admin/*. */
-export function requireAdmin(req: Request) {
+/**
+ * Platform admin auth for /api/admin/*: a PLATFORM_ADMIN console session,
+ * or `Authorization: Bearer $ADMIN_API_KEY` for scripts/cron.
+ */
+export async function requireAdmin(req: Request) {
   const expected = process.env.ADMIN_API_KEY;
   const h = req.headers.get("authorization") ?? "";
-  if (!expected || expected === "change-me" || h !== `Bearer ${expected}`) throw new HttpError(401, "Unauthorized");
+  if (expected && expected !== "change-me" && expected.length >= 24 && h === `Bearer ${expected}`) return;
+  const { getSessionUser } = await import("./session");
+  const u = await getSessionUser();
+  if (u?.role === "PLATFORM_ADMIN") return;
+  throw new HttpError(401, "Unauthorized");
 }

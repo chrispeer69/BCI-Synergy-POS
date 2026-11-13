@@ -19,7 +19,7 @@ const Body = z.object({
 
 /** POST /api/admin/merchants — board a merchant with the provider, return a one-time API key. */
 export const POST = handler(async (req: Request) => {
-  requireAdmin(req);
+  await requireAdmin(req);
   const b = Body.parse(await req.json());
   const provider = getProvider();
   const onboard = await provider.onboardMerchant({
@@ -39,7 +39,7 @@ export const POST = handler(async (req: Request) => {
 });
 
 export const GET = handler(async (req: Request) => {
-  requireAdmin(req);
+  await requireAdmin(req);
   const merchants = await db.merchant.findMany({ orderBy: { createdAt: "desc" }, take: 500 });
   return NextResponse.json({ data: merchants });
 });

@@ -204,3 +204,22 @@ table.grid { width: 100%; border-collapse: collapse; font-size: 12px; }
 .pay-foot { padding: 12px 24px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
 .result { padding: 32px 24px; text-align: center; }
 .result .big { font-family: var(--font-mono); font-size: 28px; margin: 8px 0; }
+
+/* ---------- Login ---------- */
+.login { min-height: 100vh; display: grid; place-content: center; gap: 12px; padding: 16px; }
+.login-box { width: 360px; }
+.login-form { display: grid; gap: 14px; }
+.login-form label { display: grid; }
+.login-foot { text-align: center; font-size: 10px; letter-spacing: 0.06em; }
+.input {
+  height: 34px; padding: 0 10px; border: 1px solid var(--rule-strong); border-radius: 0;
+  background: var(--bg); color: var(--text); font: 13px var(--font-mono); outline: none;
+}
+.input:focus { border-color: var(--accent); }
+.login .btn { height: 36px; }
+
+/* ---------- Topbar user ---------- */
+.userbox { display: flex; align-items: center; gap: 10px; }
+.userbox form { margin: 0; }
+.linkbtn { background: none; border: 0; color: var(--text-3); font: 11px var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 0; }
+.linkbtn:hover { color: var(--text); }

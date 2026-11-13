@@ -1,0 +1,236 @@
+<!doctype html><html><head><meta charset=utf-8><style>/* ==========================================================================
+   TradePay design system — "terminal": crisp, dense, data-first.
+   Square corners, hairline rules, tabular numerals, one accent.
+   Fonts: IBM Plex Sans / Plex Mono (self-host in /public/fonts for prod).
+   ========================================================================== */
+
+:root {
+  --font-sans: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  /* Terminal (dark) — operator surfaces */
+  --bg: #0a0b0d;
+  --panel: #101216;
+  --panel-2: #14171c;
+  --rule: #1e2228;
+  --rule-strong: #2a2f37;
+  --text: #e8eaed;
+  --text-2: #a3aab4;
+  --text-3: #6b7380;
+  --accent: #ffa31a; /* amber — use sparingly */
+  --up: #22c27a;
+  --down: #f04a4a;
+  --info: #4ea1ff;
+
+  --row-h: 30px;
+  --gap: 1px;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+a { color: inherit; text-decoration: none; }
+
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num { text-align: right; white-space: nowrap; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.muted { color: var(--text-2); }
+.dim { color: var(--text-3); }
+.accent { color: var(--accent); }
+
+/* ---------- Shell ---------- */
+.topbar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.brand { font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; font-size: 12px; }
+.brand b { color: var(--accent); font-weight: 600; }
+.nav { display: flex; gap: 18px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+.nav a[aria-current="page"] { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); padding-bottom: 9px; margin-bottom: -10px; }
+.nav a:hover { color: var(--text); }
+.topbar .right { margin-left: auto; display: flex; gap: 16px; font-size: 11px; color: var(--text-3); }
+
+.ticker {
+  display: flex;
+  overflow: hidden;
+  border-bottom: 1px solid var(--rule);
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  height: 26px;
+  align-items: center;
+}
+.ticker span { padding: 0 16px; border-right: 1px solid var(--rule); white-space: nowrap; color: var(--text-2); }
+.ticker span b { color: var(--text); font-weight: 500; margin-left: 6px; }
+
+.page { padding: 16px; display: grid; gap: 16px; }
+
+/* ---------- Panels ---------- */
+.panel { background: var(--panel); border: 1px solid var(--rule); }
+.panel-h {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.panel-h .tag { color: var(--text-3); letter-spacing: 0.04em; }
+.panel-b { padding: 12px; }
+
+/* ---------- KPI strip ---------- */
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--gap); background: var(--rule); border: 1px solid var(--rule); }
+.kpi { background: var(--panel); padding: 12px 14px; min-height: 76px; }
+.kpi .label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+.kpi .value { font-family: var(--font-mono); font-size: 22px; font-weight: 500; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.kpi .delta { font-family: var(--font-mono); font-size: 11px; margin-top: 2px; color: var(--text-3); }
+
+/* ---------- Meter ---------- */
+.meter { height: 6px; background: var(--panel-2); border: 1px solid var(--rule-strong); margin-top: 10px; }
+.meter > i { display: block; height: 100%; background: var(--accent); }
+.meter.full > i { background: var(--up); }
+
+/* ---------- Tables ---------- */
+table.grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+.grid th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  height: 28px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--rule-strong);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+}
+.grid th.num { text-align: right; }
+.grid td { height: var(--row-h); padding: 0 12px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+.grid tbody tr:hover td { background: var(--panel-2); }
+.grid .empty td { color: var(--text-3); text-align: center; height: 64px; }
+
+/* ---------- Status chips (flat, no pills) ---------- */
+.st { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid currentColor; }
+.st-SUCCEEDED, .st-PAID, .st-ACTIVE, .st-WON { color: var(--up); }
+.st-FAILED, .st-DISPUTED, .st-LOST, .st-REJECTED { color: var(--down); }
+.st-PROCESSING, .st-PENDING, .st-OPEN, .st-UNDER_REVIEW, .st-NEEDS_RESPONSE { color: var(--accent); }
+.st-REFUNDED, .st-PARTIALLY_REFUNDED, .st-EXPIRED, .st-CANCELED { color: var(--text-3); }
+
+.cols-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+
+/* ---------- Controls ---------- */
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--rule-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  font: 500 11px var(--font-sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 0;
+}
+.btn:hover { border-color: var(--text-3); }
+.btn-primary { background: var(--accent); color: #000; border-color: var(--accent); }
+.btn-primary:hover { filter: brightness(1.05); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cols-2 { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   Paper (light) — customer-facing pay page. Same system, inverted.
+   ========================================================================== */
+.paper {
+  --bg: #ffffff;
+  --panel: #ffffff;
+  --panel-2: #f6f7f8;
+  --rule: #e6e8eb;
+  --rule-strong: #cfd3d8;
+  --text: #0a0b0d;
+  --text-2: #4a515b;
+  --text-3: #8a919b;
+  --accent: #0a0b0d;
+  --up: #0f8a52;
+  --down: #c62828;
+  background: var(--panel-2);
+  color: var(--text);
+  min-height: 100vh;
+}
+.pay-wrap { max-width: 440px; margin: 0 auto; padding: 40px 16px; }
+.pay-card { background: #fff; border: 1px solid var(--rule); }
+.pay-head { padding: 20px 24px; border-bottom: 1px solid var(--rule); }
+.pay-head .merchant { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); }
+.pay-head .desc { font-size: 15px; margin-top: 4px; }
+.pay-body { padding: 20px 24px; display: grid; gap: 16px; }
+.price-row { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.price-row:last-child { border-bottom: 0; }
+.price-row .k { font-size: 12px; color: var(--text-2); }
+.price-row .v { font-family: var(--font-mono); font-size: 14px; }
+.price-row.total .k { color: var(--text); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
+.price-row.total .v { font-size: 24px; font-weight: 500; }
+.field-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+.hosted-field { height: 44px; border: 1px solid var(--rule-strong); display: flex; align-items: center; padding: 0 12px; color: var(--text-3); font-family: var(--font-mono); font-size: 12px; }
+.select { width: 100%; height: 44px; border: 1px solid var(--rule-strong); background: #fff; padding: 0 10px; font: 13px var(--font-mono); border-radius: 0; }
+.paper .btn { height: 48px; width: 100%; font-size: 12px; }
+.paper .btn-primary { background: #0a0b0d; color: #fff; border-color: #0a0b0d; }
+.disclosure { font-size: 11px; color: var(--text-3); line-height: 1.5; }
+.pay-foot { padding: 12px 24px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+.result { padding: 32px 24px; text-align: center; }
+.result .big { font-family: var(--font-mono); font-size: 28px; margin: 8px 0; }
+
+/* ---------- Login ---------- */
+.login { min-height: 100vh; display: grid; place-content: center; gap: 12px; padding: 16px; }
+.login-box { width: 360px; }
+.login-form { display: grid; gap: 14px; }
+.login-form label { display: grid; }
+.login-foot { text-align: center; font-size: 10px; letter-spacing: 0.06em; }
+.input {
+  height: 34px; padding: 0 10px; border: 1px solid var(--rule-strong); border-radius: 0;
+  background: var(--bg); color: var(--text); font: 13px var(--font-mono); outline: none;
+}
+.input:focus { border-color: var(--accent); }
+.login .btn { height: 36px; }
+
+/* ---------- Topbar user ---------- */
+.userbox { display: flex; align-items: center; gap: 10px; }
+.userbox form { margin: 0; }
+.linkbtn { background: none; border: 0; color: var(--text-3); font: 11px var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 0; }
+.linkbtn:hover { color: var(--text); }
+</style></head><body>
+<header class=topbar><div class=brand><b>■</b> TradePay</div><nav class=nav><a>Console</a><a aria-current=page>Elite Billing</a></nav><div class=right><div class=userbox><span class=mono>admin@bcisynergy.com</span><span class='st st-OPEN'>PLATFORM ADMIN</span><button class=linkbtn>Sign out</button></div></div></header>
+<div class=ticker><span>ELITE MEMBERSHIP BILLING</span><span>DUES<b>$500.00/mo</b></span><span>PERIOD<b>2026-10</b></span><span>RULE<b>Processing revenue credited first · balance invoiced on the 1st</b></span></div>
+<div class=page><div class=kpis>
+<div class=kpi><div class=label>Elite members billed</div><div class=value>7</div><div class=delta>3 fully covered (free)</div></div>
+<div class=kpi><div class=label>Covered by processing</div><div class="value up">$2,657.95</div><div class=delta>credited against dues</div></div>
+<div class=kpi><div class=label>Invoiced balance</div><div class=value>$842.05</div><div class=delta>4 invoices</div></div>
+<div class=kpi><div class=label>Collected</div><div class="value up">$313.75</div><div class=delta>37% of invoiced</div></div>
+<div class=kpi><div class=label>Outstanding</div><div class="value down">$528.30</div><div class=delta>open invoices</div></div></div>
+<div class=panel><div class=panel-h>Period close<span class=tag>runs automatically on the 1st · safe to re-run</span></div><div class=panel-b style="display:flex;gap:12px;align-items:center"><input class=input style="width:110px" value=2026-10><button class=btn>View</button><button class="btn btn-primary">Close 2026-10</button></div></div>
+<div class=panel><div class=panel-h>Invoices <span class=tag>7</span></div><table class=grid><thead><tr><th>Member</th><th>Vertical</th><th class=num>Dues</th><th class=num>Covered</th><th class=num>Balance</th><th>Status</th><th>Paid</th></tr></thead><tbody><tr><td>Big Rig Recovery</td><td class=dim>TOWING</td><td class=num>$500.00</td><td class='num up'>$500.00</td><td class=num>$0.00</td><td><span class='st st-PAID'>FREE</span></td><td class='mono dim'>—</td></tr><tr><td>Merchant One Towing</td><td class=dim>TOWING</td><td class=num>$500.00</td><td class='num up'>$500.00</td><td class=num>$0.00</td><td><span class='st st-PAID'>FREE</span></td><td class='mono dim'>—</td></tr><tr><td>Sunshine HVAC</td><td class=dim>HVAC</td><td class=num>$500.00</td><td class='num up'>$500.00</td><td class=num>$0.00</td><td><span class='st st-PAID'>FREE</span></td><td class='mono dim'>—</td></tr><tr><td>Coastal Collision</td><td class=dim>BODY SHOP</td><td class=num>$500.00</td><td class='num up'>$412.50</td><td class=num>$87.50</td><td><span class='st st-PAID'>PAID</span></td><td class='mono dim'>2026-11-03</td></tr><tr><td>Ace Plumbing Co</td><td class=dim>PLUMBING</td><td class=num>$500.00</td><td class='num up'>$334.80</td><td class=num>$165.20</td><td><span class='st st-OPEN'>OPEN</span></td><td class='mono dim'>—</td></tr><tr><td>Westside Auto</td><td class=dim>AUTO REPAIR</td><td class=num>$500.00</td><td class='num up'>$273.75</td><td class=num>$226.25</td><td><span class='st st-PAID'>PAID</span></td><td class='mono dim'>2026-11-02</td></tr><tr><td>Quick Hook Towing</td><td class=dim>TOWING</td><td class=num>$500.00</td><td class='num up'>$136.90</td><td class=num>$363.10</td><td><span class='st st-OPEN'>OPEN</span></td><td class='mono dim'>—</td></tr></tbody></table></div></div></body></html>

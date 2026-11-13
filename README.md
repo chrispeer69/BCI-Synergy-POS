@@ -17,6 +17,10 @@ Standalone, white-label, multi-vertical payments SaaS (towing, auto repair, body
 | Outbound signed webhooks to integrators | `POST /api/v1/webhook-endpoints` | ✅ |
 | Operator console (terminal theme) | `/dashboard` | ✅ |
 | Merchant boarding + API keys | `POST /api/admin/merchants` | ✅ |
+| Console login: email/password (scrypt), DB sessions, roles, merchant scoping, rate-limited | `/login`, `src/lib/session.ts`, `src/lib/permissions.ts` | ✅ |
+| User management (admin → any merchant; owner → own merchant) | `POST/GET /api/users` | ✅ |
+| Elite monthly billing: ledger finalize, dues invoice, pay link on house account, auto-mark paid | `src/lib/services/billing.ts`, `/dashboard/billing` | ✅ |
+| Monthly close cron (1st, 11:00 UTC) | `vercel.json` → `/api/cron/close-period` | ✅ |
 
 Design previews: `design/console.png`, `design/pay.png` (open the `.html` files to view).
 
@@ -26,9 +30,9 @@ Design previews: `design/console.png`, `design/pay.png` (open the `.html` files 
 cp .env.example .env            # set DATABASE_URL, ADMIN_API_KEY
 npm install
 npx prisma migrate dev --name init
-npm run db:seed                 # prints merchant #1 API key
-npm run dev                     # http://localhost:3000/dashboard (user: any, pass: ADMIN_API_KEY)
-npm test                        # 22 unit tests
+npm run db:seed                 # prints merchant #1 API key, logins + PLATFORM_MERCHANT_ID → put that id in .env
+npm run dev                     # http://localhost:3000/login
+npm test                        # 34 unit tests
 ```
 
 ## Integration API (for your dispatch SaaS and partners)
@@ -64,6 +68,21 @@ AI phone agent flow: book job → call this → text `url` to caller → read ba
 Events: `payment.succeeded`, `payment.failed`, `payment.refunded`, `dispute.created`.
 Header: `TradePay-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + body)>` — verify with `verifyWebhookSignature()` in `src/lib/crypto.ts`.
 
+## Roles
+
+| Role | Console | Pay links | Elite billing | Users | Board merchants / close period |
+|---|---|---|---|---|---|
+| PLATFORM_ADMIN | all merchants | ✅ | all members | any | ✅ |
+| OWNER | own shop | ✅ | own invoices | own shop (no admins) | — |
+| DISPATCHER | own shop | ✅ | — | — | — |
+| VIEWER | own shop (read) | — | — | — | — |
+
+## Elite billing flow
+
+1. Every succeeded payment updates the member's month ledger (platform revenue credited to $500 dues).
+2. On the 1st, the close finalizes last month: fully covered → `FREE` ($0 record); balance → `OPEN` invoice + pay link on the house account, sent to the owner.
+3. When that pay link is paid, the invoice flips to `PAID` automatically. Re-running a close is a no-op.
+
 ## Compliance guardrails (built in)
 
 - **Card data never touches our servers** — hosted fields tokenize in-browser; API accepts tokens only (PCI SAQ-A scope).
@@ -76,7 +95,7 @@ Header: `TradePay-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + body
 
 1. Sign PFaaS partner agreement (Tilled/Finix) — negotiate margin, merchant portability, chargeback liability.
 2. Verify adapter endpoints + webhook signatures in provider sandbox; wire hosted fields in `PayForm.tsx`.
-3. Replace console Basic auth (`src/middleware.ts`) with real auth + roles.
+3. Set `CRON_SECRET`, `PLATFORM_MERCHANT_ID`; add 2FA and back the login rate-limiter with Redis for multi-instance.
 4. Move outbound webhooks to a durable queue with retries.
 5. Counsel review: state rules, cash-discount signage, Elite dues-credit structure, UBIT/entity.
 6. Board merchant #1 (your shop) → live transactions → 10-shop pilot.
