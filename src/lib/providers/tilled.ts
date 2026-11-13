@@ -66,6 +66,20 @@ export const tilledProvider: PaymentsProvider = {
     return { ok: true };
   },
 
+  async submitDisputeEvidence(account, disputeId, packet) {
+    // VERIFY endpoint + payload against Tilled dispute docs in sandbox.
+    await call(`/v1/disputes/${disputeId}/evidence`, {
+      method: "POST",
+      account,
+      body: JSON.stringify({
+        description: packet.summary,
+        files: packet.attachments.map((a) => ({ type: a.type.toLowerCase(), url: a.url })),
+        metadata: { category: packet.category, strength: String(packet.strength) },
+      }),
+    });
+    return { ok: true };
+  },
+
   hostedFieldsConfig(accountId) {
     return {
       provider: "tilled",

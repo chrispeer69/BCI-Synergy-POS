@@ -3,7 +3,7 @@ import { randomToken, signWebhook } from "../crypto";
 
 /**
  * Deliver signed events to integrating systems (your dispatch SaaS, FSM, shop software).
- * Header: TradePay-Signature: t=<unix>,v1=<hmac_sha256(secret, t + "." + body)>
+ * Header: BCI-Signature: t=<unix>,v1=<hmac_sha256(secret, t + "." + body)>
  * Prod: move to a durable queue (e.g. pg-boss / SQS) with retries + backoff.
  */
 export async function emitEvent(merchantId: string, type: string, data: Record<string, unknown>) {
@@ -15,7 +15,7 @@ export async function emitEvent(merchantId: string, type: string, data: Record<s
     targets.map(async (e) => {
       const res = await fetch(e.url, {
         method: "POST",
-        headers: { "content-type": "application/json", "TradePay-Signature": signWebhook(e.secret, body) },
+        headers: { "content-type": "application/json", "BCI-Signature": signWebhook(e.secret, body) },
         body,
         signal: AbortSignal.timeout(5000),
       });

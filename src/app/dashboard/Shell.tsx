@@ -2,6 +2,7 @@ import type { SessionUser } from "@/lib/session";
 
 const NAV = [
   { href: "/dashboard", label: "Console", key: "console" },
+  { href: "/dashboard/disputes", label: "Disputes", key: "disputes" },
   { href: "/dashboard/billing", label: "Elite Billing", key: "billing", roles: ["PLATFORM_ADMIN", "OWNER"] },
 ];
 
@@ -13,7 +14,7 @@ export function Shell({
   children,
 }: {
   user: SessionUser;
-  active: "console" | "billing";
+  active: "console" | "billing" | "disputes";
   merchants?: { id: string; dbaName: string }[];
   current?: string;
   children: React.ReactNode;
@@ -21,7 +22,7 @@ export function Shell({
   return (
     <>
       <header className="topbar">
-        <div className="brand"><b>■</b> {process.env.BRAND_NAME ?? "TradePay"}</div>
+        <div className="brand"><b>■</b> {process.env.BRAND_NAME ?? "BCI Synergy POS"}</div>
         <nav className="nav">
           {NAV.filter((n) => !n.roles || n.roles.includes(user.role)).map((n) => (
             <a key={n.key} href={n.href} aria-current={active === n.key ? "page" : undefined}>{n.label}</a>

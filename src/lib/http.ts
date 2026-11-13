@@ -9,6 +9,8 @@ export function handler<A extends unknown[]>(fn: (...args: A) => Promise<Respons
     try {
       return await fn(...args);
     } catch (e) {
+      // Let Next.js control-flow signals (dynamic usage, redirect, notFound) propagate untouched.
+      if (e && typeof e === "object" && "digest" in e && typeof (e as { digest: unknown }).digest === "string") throw e;
       if (e instanceof HttpError) return NextResponse.json({ error: e.message, details: e.details }, { status: e.status });
       if (e instanceof ZodError) return NextResponse.json({ error: "Invalid request", details: e.flatten() }, { status: 400 });
       if (e instanceof ProviderError) {

@@ -72,6 +72,13 @@ export const finixProvider: PaymentsProvider = {
     return { ok: true };
   },
 
+  async submitDisputeEvidence(_acct, disputeId, packet) {
+    // VERIFY against Finix dispute evidence docs (file upload + submit) in sandbox.
+    await call(`/disputes/${disputeId}/evidence`, { method: "POST", body: JSON.stringify({ note: packet.summary, tags: { category: packet.category } }) });
+    await call(`/disputes/${disputeId}/submit`, { method: "POST", body: JSON.stringify({ note: packet.summary }) });
+    return { ok: true };
+  },
+
   hostedFieldsConfig(accountId) {
     return { provider: "finix", accountId, env: base().includes("sandbox") ? "sandbox" : "production" };
   },

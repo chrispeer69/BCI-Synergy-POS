@@ -7,7 +7,7 @@ export class HttpError extends Error {
   }
 }
 
-/** Integration API auth: `Authorization: Bearer tp_test_...` → merchant. */
+/** Integration API auth: `Authorization: Bearer bci_test_...` → merchant. */
 export async function requireMerchantKey(req: Request) {
   const h = req.headers.get("authorization") ?? "";
   const key = h.startsWith("Bearer ") ? h.slice(7).trim() : "";

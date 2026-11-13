@@ -7,11 +7,12 @@ export type Action =
   | "users:manage"
   | "merchants:board"
   | "merchants:all"
-  | "billing:close";
+  | "billing:close"
+  | "disputes:manage";
 
 const GRANTS: Record<Role, Action[]> = {
-  PLATFORM_ADMIN: ["payments:read", "paylinks:create", "billing:read", "users:manage", "merchants:board", "merchants:all", "billing:close"],
-  OWNER: ["payments:read", "paylinks:create", "billing:read", "users:manage"],
+  PLATFORM_ADMIN: ["payments:read", "paylinks:create", "billing:read", "users:manage", "merchants:board", "merchants:all", "billing:close", "disputes:manage"],
+  OWNER: ["payments:read", "paylinks:create", "billing:read", "users:manage", "disputes:manage"],
   DISPATCHER: ["payments:read", "paylinks:create"],
   VIEWER: ["payments:read"],
 };

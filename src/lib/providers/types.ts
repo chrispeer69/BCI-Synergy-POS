@@ -4,6 +4,7 @@
  * and we receive only a payment-method token.
  */
 import type { Funding } from "../pricing";
+import type { EvidencePacket } from "../evidence";
 
 export type OnboardMerchantInput = {
   legalName: string;
@@ -59,6 +60,8 @@ export interface PaymentsProvider {
   lookupPaymentMethod(providerAccountId: string, paymentMethodToken: string): Promise<LookupResult>;
   charge(input: ChargeInput): Promise<ChargeResult>;
   refund(providerAccountId: string, providerPaymentId: string, amountCents: number): Promise<{ ok: boolean }>;
+  /** Submit an assembled evidence packet for a dispute. */
+  submitDisputeEvidence(providerAccountId: string, providerDisputeId: string, packet: EvidencePacket): Promise<{ ok: boolean }>;
   /** Client config for hosted fields on the pay page (public keys only). */
   hostedFieldsConfig(providerAccountId: string): { provider: string; publishableKey?: string; accountId: string; env: "sandbox" | "production" };
   verifyAndParseWebhook(rawBody: string, headers: Headers): Promise<NormalizedEvent>;

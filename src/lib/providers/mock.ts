@@ -38,6 +38,10 @@ export const mockProvider: PaymentsProvider = {
     return { ok: true };
   },
 
+  async submitDisputeEvidence() {
+    return { ok: true };
+  },
+
   hostedFieldsConfig(accountId) {
     return { provider: "mock", accountId, env: "sandbox" };
   },
