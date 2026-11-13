@@ -11,7 +11,7 @@ export function sha256(s: string): string {
 /** Returns full key (show once) + prefix + hash (store). */
 export function generateApiKey(env: "live" | "test" = "test") {
   const secret = randomToken(32);
-  const prefix = `tp_${env}_${secret.slice(0, 8)}`;
+  const prefix = `bci_${env}_${secret.slice(0, 8)}`;
   const key = `${prefix}_${secret.slice(8)}`;
   return { key, prefix, hash: sha256(key) };
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: process.env.BRAND_NAME ?? "TradePay",
+  title: process.env.BRAND_NAME ?? "BCI Synergy POS",
   description: "Payments for the trades.",
 };
 
