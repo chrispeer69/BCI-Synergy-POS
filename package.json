@@ -1,5 +1,5 @@
 {
-  "name": "tradepay",
+  "name": "bci-synergy-pos",
   "version": "0.1.0",
   "private": true,
   "description": "Multi-vertical white-label payments SaaS (towing, auto repair, body shop, HVAC, plumbing, electrical, home services) on PayFac-as-a-Service rails.",

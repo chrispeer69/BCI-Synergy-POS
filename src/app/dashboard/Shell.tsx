@@ -21,7 +21,7 @@ export function Shell({
   return (
     <>
       <header className="topbar">
-        <div className="brand"><b>■</b> {process.env.BRAND_NAME ?? "TradePay"}</div>
+        <div className="brand"><b>■</b> {process.env.BRAND_NAME ?? "BCI Synergy POS"}</div>
         <nav className="nav">
           {NAV.filter((n) => !n.roles || n.roles.includes(user.role)).map((n) => (
             <a key={n.key} href={n.href} aria-current={active === n.key ? "page" : undefined}>{n.label}</a>

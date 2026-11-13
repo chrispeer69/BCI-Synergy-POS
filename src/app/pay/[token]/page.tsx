@@ -70,7 +70,7 @@ export default async function PayPage({ params }: { params: { token: string } })
 
           <div className="pay-foot">
             <span>Secure payment</span>
-            <span>{process.env.BRAND_NAME ?? "TradePay"}</span>
+            <span>{process.env.BRAND_NAME ?? "BCI Synergy POS"}</span>
           </div>
         </div>
       </div>

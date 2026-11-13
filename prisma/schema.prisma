@@ -1,4 +1,4 @@
-// TradePay — multi-vertical white-label payments SaaS
+// BCI Synergy POS — multi-vertical white-label payments SaaS
 // Money is always stored in integer cents. Rates in basis points (1 bps = 0.01%).
 
 generator client {
@@ -192,7 +192,7 @@ model ApiKey {
   merchantId String
   merchant   Merchant  @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   name       String
-  prefix     String    @unique // shown in UI, e.g. tp_live_ab12
+  prefix     String    @unique // shown in UI, e.g. bci_live_ab12
   hash       String    // sha256 of full key; full key never stored
   lastUsedAt DateTime?
   revokedAt  DateTime?

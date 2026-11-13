@@ -1,8 +1,8 @@
-# TradePay — Payments for the Trades
+# BCI Synergy POS — Payments for the Trades
 
 Standalone, white-label, multi-vertical payments SaaS (towing, auto repair, body shop, HVAC, plumbing, electrical, home services) running on PayFac-as-a-Service rails (Tilled / Finix). Integrates with any dispatch, FSM, or shop-management system through a REST API + signed webhooks.
 
-> `TradePay` is a placeholder brand — set `BRAND_NAME` in `.env`.
+> Brand is set by `BRAND_NAME` in `.env` (default: BCI Synergy POS).
 
 ## What's in Phase 1
 
@@ -37,7 +37,7 @@ npm test                        # 34 unit tests
 
 ## Integration API (for your dispatch SaaS and partners)
 
-Auth: `Authorization: Bearer tp_test_...` (per-merchant key, hashed at rest).
+Auth: `Authorization: Bearer bci_test_...` (per-merchant key, hashed at rest).
 
 ### Create a pay link — the core call
 ```http
@@ -66,7 +66,7 @@ AI phone agent flow: book job → call this → text `url` to caller → read ba
 
 ### Outbound webhooks
 Events: `payment.succeeded`, `payment.failed`, `payment.refunded`, `dispute.created`.
-Header: `TradePay-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + body)>` — verify with `verifyWebhookSignature()` in `src/lib/crypto.ts`.
+Header: `BCI-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + body)>` — verify with `verifyWebhookSignature()` in `src/lib/crypto.ts`.
 
 ## Roles
 
