@@ -92,6 +92,17 @@ enum PayoutStatus {
   FAILED
 }
 
+enum EvidenceType {
+  PHOTO                  // scene, vehicle condition, hookup, drop-off
+  SIGNATURE              // customer authorization / receipt acknowledgment
+  GPS                    // { lat, lng, accuracyM } at dispatch, arrival, completion
+  TIMELINE_EVENT         // { event: "dispatched" | "arrived" | "completed", at }
+  CALL_RECORDING         // reference to recording (payment portions paused)
+  DOCUMENT               // police/tow order, impound release, invoice, work order
+  CUSTOMER_AUTHORIZATION // signed estimate / service agreement / terms accepted
+  NOTE
+}
+
 enum Role {
   PLATFORM_ADMIN // BCI staff: all merchants, billing, boarding
   OWNER          // merchant owner: everything for own merchant
@@ -212,8 +223,25 @@ model Job {
 
   payLinks PayLink[]
   payments Payment[]
+  evidence JobEvidence[]
 
   @@unique([merchantId, source, externalRef])
+}
+
+// Dispute evidence locker. Collected at time of service, assembled automatically on dispute.
+model JobEvidence {
+  id         String       @id @default(cuid())
+  jobId      String
+  job        Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type       EvidenceType
+  url        String?      // https URL to stored file (photo, signature image, recording, doc)
+  data       Json         @default("{}")
+  sha256     String?      // integrity hash of the file, if provided by the capturing app
+  capturedAt DateTime
+  capturedBy String?      // driver / tech / dispatcher identifier
+  createdAt  DateTime     @default(now())
+
+  @@index([jobId, type])
 }
 
 model PayLink {
@@ -271,8 +299,11 @@ model Dispute {
   reason            String
   status            DisputeStatus @default(NEEDS_RESPONSE)
   respondBy         DateTime?
-  // Evidence locker: photos, signature, GPS, timestamps, call recording refs (no card data)
+  category          String        @default("OTHER") // FRAUD | NOT_RECEIVED | NOT_AS_DESCRIBED | DUPLICATE | CREDIT_NOT_PROCESSED | OTHER
+  // Assembled evidence packet (no card data)
   evidence          Json          @default("{}")
+  strength          Int           @default(0) // 0-100 evidence strength score
+  submittedAt       DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 }

@@ -21,6 +21,9 @@ Standalone, white-label, multi-vertical payments SaaS (towing, auto repair, body
 | User management (admin → any merchant; owner → own merchant) | `POST/GET /api/users` | ✅ |
 | Elite monthly billing: ledger finalize, dues invoice, pay link on house account, auto-mark paid | `src/lib/services/billing.ts`, `/dashboard/billing` | ✅ |
 | Monthly close cron (1st, 11:00 UTC) | `vercel.json` → `/api/cron/close-period` | ✅ |
+| Chargeback evidence locker: photos, signature, GPS, timeline, call ref, docs per job; card-number guard | `POST/GET /api/v1/jobs/evidence` | ✅ |
+| Dispute auto-assembly: reason → category, strength score 0–100, missing list, packet; optional auto-submit ≥70 | `src/lib/evidence.ts`, `src/lib/services/disputes.ts` | ✅ |
+| Disputes console: deadlines, $ at risk, win rate, packet view, one-click submit | `/dashboard/disputes` | ✅ |
 
 Design previews: `design/console.png`, `design/pay.png` (open the `.html` files to view).
 
@@ -32,7 +35,7 @@ npm install
 npx prisma migrate dev --name init
 npm run db:seed                 # prints merchant #1 API key, logins + PLATFORM_MERCHANT_ID → put that id in .env
 npm run dev                     # http://localhost:3000/login
-npm test                        # 34 unit tests
+npm test                        # 50 unit tests
 ```
 
 ## Integration API (for your dispatch SaaS and partners)
@@ -64,8 +67,25 @@ AI phone agent flow: book job → call this → text `url` to caller → read ba
 | GET | `/api/v1/dues` | Elite coverage meter (credit, balance, % covered) |
 | POST | `/api/v1/webhook-endpoints` | Register `https://` URL + events; secret returned once |
 
+### Push scene evidence (driver app / dispatch)
+```http
+POST /api/v1/jobs/evidence
+{
+  "job": { "source": "dispatch", "externalRef": "T-10441" },
+  "items": [
+    { "type": "TIMELINE_EVENT", "data": { "event": "arrived" }, "capturedAt": "2026-11-12T15:02:00Z", "capturedBy": "truck 12" },
+    { "type": "GPS", "data": { "lat": 25.7617, "lng": -80.1918, "accuracyM": 8, "label": "arrival" }, "capturedAt": "2026-11-12T15:02:05Z" },
+    { "type": "PHOTO", "url": "https://files.yourapp.com/t-10441/hookup.jpg", "capturedAt": "2026-11-12T15:10:00Z" },
+    { "type": "SIGNATURE", "url": "https://files.yourapp.com/t-10441/sig.png", "capturedAt": "2026-11-12T15:40:00Z" }
+  ]
+}
+```
+Types: `PHOTO`, `SIGNATURE`, `GPS`, `TIMELINE_EVENT`, `CALL_RECORDING`, `DOCUMENT`, `CUSTOMER_AUTHORIZATION`, `NOTE`. Files must be `https` URLs. Anything resembling a card number is rejected (422). Evidence added later refreshes any open dispute automatically.
+
+**Strength weights by dispute type:** fraud → signature, authorization, call recording, GPS; service not provided → GPS, timeline, photos; not as described → photos, signed estimate. Merchant setting `settings.autoSubmitDisputes = true` submits automatically when strength ≥ 70.
+
 ### Outbound webhooks
-Events: `payment.succeeded`, `payment.failed`, `payment.refunded`, `dispute.created`.
+Events: `payment.succeeded`, `payment.failed`, `payment.refunded`, `dispute.created` (includes category + strength), `dispute.submitted`.
 Header: `BCI-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + body)>` — verify with `verifyWebhookSignature()` in `src/lib/crypto.ts`.
 
 ## Roles
@@ -102,4 +122,4 @@ Header: `BCI-Signature: t=<unix>,v1=<hex hmac_sha256(secret, t + "." + body)>` �
 
 ## Phase 2 backlog
 
-Driver app (Expo) w/ Tap to Pay + scene evidence · dispute evidence auto-submit · instant payouts · ACH · consumer financing (HVAC) · vertical modules (impound/storage, repair orders, insurance split) · dues true-up billing · partner/reseller portal.
+Driver app (Expo) w/ Tap to Pay + scene evidence capture (feeds the locker) · instant payouts · ACH · consumer financing (HVAC) · vertical modules (impound/storage, repair orders, insurance split) · dues true-up billing · partner/reseller portal.

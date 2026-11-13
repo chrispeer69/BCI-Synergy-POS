@@ -2,6 +2,7 @@ import type { SessionUser } from "@/lib/session";
 
 const NAV = [
   { href: "/dashboard", label: "Console", key: "console" },
+  { href: "/dashboard/disputes", label: "Disputes", key: "disputes" },
   { href: "/dashboard/billing", label: "Elite Billing", key: "billing", roles: ["PLATFORM_ADMIN", "OWNER"] },
 ];
 
@@ -13,7 +14,7 @@ export function Shell({
   children,
 }: {
   user: SessionUser;
-  active: "console" | "billing";
+  active: "console" | "billing" | "disputes";
   merchants?: { id: string; dbaName: string }[];
   current?: string;
   children: React.ReactNode;

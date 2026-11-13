@@ -5,7 +5,7 @@ import { randomToken } from "@/lib/crypto";
 import { db } from "@/lib/db";
 import { handler } from "@/lib/http";
 
-const EVENTS = ["payment.succeeded", "payment.failed", "payment.refunded", "dispute.created", "*"] as const;
+const EVENTS = ["payment.succeeded", "payment.failed", "payment.refunded", "dispute.created", "dispute.submitted", "*"] as const;
 const Body = z.object({ url: z.string().url().startsWith("https://"), events: z.array(z.enum(EVENTS)).min(1) });
 
 /** Register an outbound webhook (e.g. your dispatch system marks job PAID). Secret returned once. */

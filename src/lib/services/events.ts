@@ -3,6 +3,7 @@ import { db } from "../db";
 import type { NormalizedEvent } from "../providers/types";
 import { onPaymentSucceeded } from "./payments";
 import { emitEvent } from "./outbound";
+import { onDisputeCreated } from "./disputes";
 
 /** Apply a verified provider event exactly once. */
 export async function applyProviderEvent(provider: string, e: NormalizedEvent, raw: unknown) {
@@ -39,11 +40,15 @@ export async function applyProviderEvent(provider: string, e: NormalizedEvent, r
     case "dispute.created": {
       const p = await db.payment.findUnique({ where: { providerPaymentId: e.providerPaymentId } });
       if (p) {
-        await db.dispute.create({
+        const d = await db.dispute.create({
           data: { paymentId: p.id, providerDisputeId: e.providerDisputeId, amountCents: e.amountCents, reason: e.reason, respondBy: e.respondBy ? new Date(e.respondBy) : null },
         });
         await db.payment.update({ where: { id: p.id }, data: { status: "DISPUTED" } });
-        await emitEvent(p.merchantId, "dispute.created", { paymentId: p.id, jobId: p.jobId, amountCents: e.amountCents, reason: e.reason });
+        const assembled = await onDisputeCreated(d.id);
+        await emitEvent(p.merchantId, "dispute.created", {
+          disputeId: d.id, paymentId: p.id, jobId: p.jobId, amountCents: e.amountCents, reason: e.reason,
+          category: assembled.category, strength: assembled.strength, respondBy: e.respondBy ?? null,
+        });
       }
       break;
     }
