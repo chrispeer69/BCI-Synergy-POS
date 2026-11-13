@@ -151,7 +151,11 @@ export async function onPaymentSucceeded(paymentId: string) {
   });
   if (won.count === 0) return;
   const p = await db.payment.findUniqueOrThrow({ where: { id: paymentId } });
-  if (p.payLinkId) await db.payLink.updateMany({ where: { id: p.payLinkId, status: "OPEN" }, data: { status: "PAID" } });
+  if (p.payLinkId) {
+    await db.payLink.updateMany({ where: { id: p.payLinkId, status: "OPEN" }, data: { status: "PAID" } });
+    // Elite dues invoices are collected via pay links on the house account
+    await db.duesInvoice.updateMany({ where: { payLinkId: p.payLinkId, status: "OPEN" }, data: { status: "PAID", paidAt: new Date() } });
+  }
   await recordDuesForPayment(p.merchantId, p.createdAt);
   await emitEvent(p.merchantId, "payment.succeeded", {
     paymentId: p.id,

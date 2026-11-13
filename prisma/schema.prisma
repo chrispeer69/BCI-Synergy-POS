@@ -92,6 +92,63 @@ enum PayoutStatus {
   FAILED
 }
 
+enum Role {
+  PLATFORM_ADMIN // BCI staff: all merchants, billing, boarding
+  OWNER          // merchant owner: everything for own merchant
+  DISPATCHER     // create pay links, view payments
+  VIEWER         // read-only
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  WAIVED
+  VOID
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  passwordHash String
+  role         Role
+  merchantId   String?   // null only for PLATFORM_ADMIN
+  merchant     Merchant? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  disabledAt   DateTime?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id // sha256 of the cookie token; raw token never stored
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Monthly Elite dues invoice for any balance not covered by processing
+model DuesInvoice {
+  id          String        @id @default(cuid())
+  merchantId  String
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  period      String        // YYYY-MM
+  duesCents   Int
+  creditCents Int
+  amountCents Int           // balance due
+  status      InvoiceStatus @default(OPEN)
+  payLinkId   String?       @unique // pay link on the house (platform) account
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  @@unique([merchantId, period])
+}
+
 model Merchant {
   id                String          @id @default(cuid())
   legalName         String
@@ -125,6 +182,8 @@ model Merchant {
   duesLedger  DuesLedgerEntry[]
   webhooks    WebhookEndpoint[]
   jobs        Job[]
+  users       User[]
+  invoices    DuesInvoice[]
 }
 
 // API keys for integrations (your dispatch SaaS, partner software, etc.)

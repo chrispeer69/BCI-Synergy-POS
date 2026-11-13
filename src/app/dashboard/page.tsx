@@ -1,6 +1,9 @@
 import { db } from "@/lib/db";
 import { duesStatus, eliteDuesMonthlyCents } from "@/lib/services/dues";
 import { ts, usd } from "@/lib/format";
+import { resolveMerchantScope } from "@/lib/permissions";
+import { requireUser } from "@/lib/session";
+import { Kpi, Row, Shell } from "./Shell";
 
 export const dynamic = "force-dynamic";
 
@@ -11,14 +14,19 @@ const VERTICAL_LABEL: Record<string, string> = {
 const MODE_LABEL: Record<string, string> = { STANDARD: "Standard", SURCHARGE: "Surcharge", CASH_DISCOUNT: "Cash Discount" };
 
 export default async function Dashboard({ searchParams }: { searchParams: { m?: string } }) {
-  const merchants = await db.merchant.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, dbaName: true } });
-  const m = searchParams.m
-    ? await db.merchant.findUnique({ where: { id: searchParams.m } })
-    : await db.merchant.findFirst({ orderBy: { createdAt: "asc" } });
+  const user = await requireUser("payments:read");
+  const isAdmin = user.role === "PLATFORM_ADMIN";
+  const merchants = isAdmin ? await db.merchant.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, dbaName: true } }) : undefined;
+  const scope = resolveMerchantScope(user, searchParams.m);
+  const m = scope
+    ? await db.merchant.findUnique({ where: { id: scope } })
+    : isAdmin
+      ? await db.merchant.findFirst({ orderBy: { createdAt: "asc" } })
+      : null;
 
   if (!m) {
     return (
-      <Shell>
+      <Shell user={user} active="console">
         <div className="page">
           <div className="panel">
             <div className="panel-h">No merchants <span className="tag">POST /api/admin/merchants</span></div>
@@ -49,7 +57,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { m?: 
   const openLinkTotal = links.reduce((s, l) => s + l.baseAmountCents, 0);
 
   return (
-    <Shell merchants={merchants} current={m.id}>
+    <Shell user={user} active="console" merchants={merchants} current={m.id}>
       <div className="ticker">
         <span>{m.dbaName.toUpperCase()}</span>
         <span>VERTICAL<b>{VERTICAL_LABEL[m.vertical]}</b></span>
@@ -134,64 +142,16 @@ export default async function Dashboard({ searchParams }: { searchParams: { m?: 
               </table>
             </div>
 
-            <div className="panel">
+            {isAdmin && <div className="panel">
               <div className="panel-h">Platform <span className="tag">operator view</span></div>
               <div className="panel-b">
                 <Row k="Platform revenue · MTD" v={usd(mtdRev)} tone="up" />
                 <Row k="Effective take" v={mtdVol ? `${((mtdRev / mtdVol) * 100).toFixed(2)}%` : "—"} />
               </div>
-            </div>
+            </div>}
           </div>
         </div>
       </div>
     </Shell>
-  );
-}
-
-function Shell({ children, merchants, current }: { children: React.ReactNode; merchants?: { id: string; dbaName: string }[]; current?: string }) {
-  return (
-    <>
-      <header className="topbar">
-        <div className="brand"><b>■</b> {process.env.BRAND_NAME ?? "TradePay"}</div>
-        <nav className="nav">
-          <a href="/dashboard" aria-current="page">Console</a>
-          <a href="#">Payments</a>
-          <a href="#">Payouts</a>
-          <a href="#">Disputes</a>
-          <a href="#">Merchants</a>
-        </nav>
-        <div className="right">
-          {merchants && merchants.length > 1 && (
-            <form>
-              <select name="m" defaultValue={current} className="mono" style={{ background: "var(--panel)", color: "var(--text)", border: "1px solid var(--rule-strong)", height: 24, fontSize: 11 }}>
-                {merchants.map((x) => <option key={x.id} value={x.id}>{x.dbaName}</option>)}
-              </select>
-              <button className="btn" style={{ height: 24, marginLeft: 6 }}>Go</button>
-            </form>
-          )}
-          <span className="mono">{new Date().toISOString().slice(0, 16).replace("T", " ")} UTC</span>
-        </div>
-      </header>
-      {children}
-    </>
-  );
-}
-
-function Kpi({ label, value, delta, tone }: { label: string; value: string; delta?: string; tone?: "up" | "down" }) {
-  return (
-    <div className="kpi">
-      <div className="label">{label}</div>
-      <div className={`value ${tone ?? ""}`}>{value}</div>
-      {delta && <div className="delta">{delta}</div>}
-    </div>
-  );
-}
-
-function Row({ k, v, tone }: { k: string; v: string; tone?: "up" | "down" }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid var(--rule)" }}>
-      <span className="muted" style={{ fontSize: 12 }}>{k}</span>
-      <span className={`mono ${tone ?? ""}`}>{v}</span>
-    </div>
   );
 }
